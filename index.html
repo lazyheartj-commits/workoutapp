@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iron Week Log</title>
+<meta name="theme-color" content="#2747c9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Iron Week">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky week strip (day + muscle-group chips) on top, one column of exercise cards with set rows like a gym logbook */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18202a; --muted:#5d6876; --line:#d5dbe2;
+  --accent:#2747c9; --accent-ink:#ffffff; --done:#1f8a55; --done-bg:#e3f4ea; --soft:#e4e9f7;
+  --f-display:"Saira Condensed","Arial Narrow",sans-serif;
+  --f-body:"Work Sans",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --panel:#1a2029; --ink:#e7ecf2; --muted:#93a0b0; --line:#2b3440;
+  --accent:#7c95ff; --accent-ink:#0d1220; --done:#5fd197; --done-bg:#183326; --soft:#222b40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --panel:#1a2029; --ink:#e7ecf2; --muted:#93a0b0; --line:#2b3440;
+  --accent:#7c95ff; --accent-ink:#0d1220; --done:#5fd197; --done-bg:#183326; --soft:#222b40; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{font-size:15px}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+header .wrap{padding-block:14px 10px;display:grid;gap:10px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:.02em;text-transform:uppercase;margin:0;line-height:1}
+.unit{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.unit button{border:0;background:transparent;color:var(--muted);font:600 13px var(--f-body);padding:6px 12px;cursor:pointer}
+.unit button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.day{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;padding:6px 2px;cursor:pointer;display:grid;gap:4px;align-content:start;justify-items:center;min-height:74px}
+.day b{font-family:var(--f-display);font-size:16px;letter-spacing:.04em;line-height:1}
+.chips{display:flex;flex-direction:column;gap:2px;align-items:center;width:100%}
+.chips i{font:500 9.5px var(--f-num);font-style:normal;letter-spacing:.02em;background:var(--soft);color:var(--ink);border-radius:3px;padding:1px 4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chips i.none{background:transparent;color:var(--muted)}
+.day[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.day[aria-current="true"] .chips i{background:transparent;color:var(--accent-ink);box-shadow:inset 0 0 0 1px currentColor}
+.day[aria-current="true"] .chips i.none{box-shadow:none}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.focus{padding-block:22px 6px;display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.focus>div:first-child{flex:1 1 260px;min-width:0}
+.weekday{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.dayname{display:block;width:100%;font-family:var(--f-display);font-weight:800;font-size:34px;text-transform:uppercase;line-height:1.05;color:var(--ink);background:transparent;border:0;border-bottom:1px dashed var(--line);padding:2px 0;margin:2px 0 0}
+.dayname::placeholder{color:var(--muted);opacity:.6}
+.focus p{margin:6px 0 0;color:var(--muted)}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{display:grid}
+.stat small{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat strong{font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums}
+.list{display:grid;gap:12px;margin-top:14px}
+.ex{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.exhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.exhead h3{margin:0;font-size:16px;font-weight:600}
+.grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-left:6px;font-weight:600}
+.target{font-family:var(--f-num);font-size:12.5px;color:var(--muted)}
+.last{font-size:12.5px;color:var(--muted);margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-variant-numeric:tabular-nums}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;font-weight:500;padding:0 6px 4px}
+td{padding:4px 6px;border-top:1px solid var(--line)}
+td.n{font-family:var(--f-num);color:var(--muted);width:36px}
+input[type=number]{width:100%;max-width:110px;font:500 15px var(--f-num);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px}
+.chk{width:34px;height:34px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:16px}
+tr.done .chk{background:var(--done);border-color:var(--done);color:#fff}
+tr.done td{background:var(--done-bg)}
+.row-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{color:var(--muted)}
+.btn:disabled{opacity:.4;cursor:default}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--muted)}
+.empty h3{color:var(--ink);margin:0 0 6px;font-family:var(--f-display);text-transform:uppercase;font-size:22px}
+.empty p{margin:0}
+.add{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.addhead{flex:1 0 100%;font-family:var(--f-display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:18px}
+.fld{display:grid;gap:4px;flex:1 1 150px;min-width:0}
+.fld.grow{flex:2 1 220px}
+.fld.sm{flex:0 0 76px}
+.fld span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.add input,.add select{width:100%;min-width:0;font:15px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.fld.sm input{font-family:var(--f-num);max-width:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px}
+@media (max-width:460px){.dayname{font-size:28px}.chips i{font-size:8.5px;padding:1px 2px}}
+@media (prefers-reduced-motion:no-preference){.ex{transition:border-color .15s}}
+</style>
+</head>
+<body>
+
+
+<header><div class="wrap">
+  <div class="top">
+    <h1>Iron Week</h1>
+    <div class="unit" role="group" aria-label="Weight unit">
+      <button id="u-lb" aria-pressed="true">lb</button><button id="u-kg" aria-pressed="false">kg</button>
+    </div>
+  </div>
+  <nav class="days" id="days" aria-label="Days of the week"></nav>
+</div></header>
+
+<main class="wrap">
+  <section class="focus">
+    <div>
+      <div class="weekday" id="weekday"></div>
+      <input class="dayname" id="dayname" placeholder="Name this day" aria-label="Day name" maxlength="30">
+      <p id="sub"></p>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>Sets done</small><strong id="s-sets">0/0</strong></div>
+      <div class="stat"><small>Volume</small><strong id="s-vol">0</strong></div>
+      <div class="stat"><small>Cardio</small><strong id="s-min">0 min</strong></div>
+    </div>
+  </section>
+  <div class="list" id="list"></div>
+  <form class="add" id="addform">
+    <div class="addhead">Add an exercise</div>
+    <label class="fld"><span>Muscle group</span><select id="add-group"></select></label>
+    <label class="fld grow"><span>Exercise</span><select id="add-pick"></select><input id="add-name" placeholder="Type an exercise name" hidden></label>
+    <label class="fld sm" id="f-sets"><span>Sets</span><input id="add-sets" type="number" min="1" max="10" value="3"></label>
+    <label class="fld sm" id="f-reps"><span>Reps</span><input id="add-reps" placeholder="8-12" value="10"></label>
+    <label class="fld sm" id="f-min" hidden><span>Minutes</span><input id="add-min" type="number" min="1" max="300" value="20"></label>
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const LIB={
+ "Chest":[["Barbell Bench Press",4,"6-8"],["DB Bench Press",3,"8-10"],["Incline Barbell Press",3,"8-10"],["Incline DB Press",3,"10-12"],["Decline DB Press",3,"10-12"],["Machine Chest Press",3,"10-12"],["Cable Fly",3,"12-15"],["Pec Deck",3,"12-15"],["Dip",3,"8-12"],["Push-Up",3,"12-15"]],
+ "Back":[["Pull-Up",4,"6-10"],["Chin-Up",3,"6-10"],["Lat Pulldown",3,"10-12"],["Lat Pulldown (neutral)",3,"10-12"],["Seated Cable Row",3,"8-10"],["Chest-Supported Row",4,"8-10"],["Single-Arm DB Row",3,"10-12"],["T-Bar Row",3,"8-10"],["Machine Row",3,"10-12"],["Straight-Arm Pulldown",3,"12-15"],["Face Pull",3,"15"],["Back Extension",2,"12-15"],["DB Shrug",3,"10-12"]],
+ "Shoulders":[["Seated DB Shoulder Press",3,"8-10"],["Arnold Press",3,"8-10"],["Machine Shoulder Press",3,"10-12"],["Landmine Press",3,"8-10"],["DB Lateral Raise",3,"12-15"],["Cable Lateral Raise",3,"12-15"],["Reverse Pec Deck",3,"12-15"],["Rear Delt DB Fly",3,"12-15"],["Front Raise",2,"12"],["Cable Upright Row",3,"10-12"]],
+ "Biceps":[["EZ-Bar Curl",3,"8-12"],["DB Curl",3,"10-12"],["Incline DB Curl",3,"10-12"],["Hammer Curl",3,"10-12"],["Cable Curl",3,"12-15"],["Preacher Curl",3,"10-12"],["Concentration Curl",2,"12"]],
+ "Triceps":[["Triceps Rope Pushdown",3,"10-15"],["Triceps Bar Pushdown",3,"10-12"],["Overhead Triceps Extension",3,"10-12"],["Skull Crusher",3,"8-12"],["Close-Grip Bench Press",3,"6-8"],["DB Kickback",2,"12-15"]],
+ "Quads":[["Leg Press",4,"8-12"],["Goblet Squat",3,"10-12"],["Bulgarian Split Squat (DB)",3,"8-10/leg"],["Walking Lunge",3,"10/leg"],["Reverse Lunge",3,"10/leg"],["DB Step-Up",3,"10/leg"],["Leg Extension",3,"12-15"],["Hip Adduction Machine",3,"12-15"]],
+ "Hamstrings & Glutes":[["Barbell Hip Thrust",4,"8-12"],["Glute Bridge",3,"15"],["Lying Leg Curl",3,"10-12"],["Seated Leg Curl",3,"10-12"],["Nordic Curl",3,"5-8"],["Cable Pull-Through",3,"12"],["Cable Glute Kickback",3,"12/leg"],["Hip Abduction Machine",3,"12-15"],["45° Back Extension",3,"12-15"]],
+ "Calves":[["Standing Calf Raise",3,"12-15"],["Seated Calf Raise",3,"12-15"],["Leg Press Calf Press",3,"15"],["Single-Leg Calf Raise",3,"12/leg"]],
+ "Core":[["Plank (sec)",3,"30-60"],["Side Plank (sec/side)",2,"30"],["Pallof Press",2,"10-12/side"],["Hanging Knee Raise",3,"10-15"],["Hanging Leg Raise",3,"8-12"],["Cable Crunch",3,"10-15"],["Ab Wheel Rollout",3,"8-12"],["Dead Bug",3,"10/side"],["Farmer Carry (steps)",3,"40"]],
+ "Cardio & Mobility":[["Treadmill Walk",20],["Treadmill Incline Walk",20],["Treadmill Jog",20],["Treadmill Run",20],["Treadmill Intervals",15],["Outdoor Walk",30],["Outdoor Run",30],["Sprint Intervals",15],["Hike",60],["Stationary Bike",20],["Spin / Cycling Class",45],["Outdoor Cycling",45],["Air / Assault Bike",10],["Rowing Machine",15],["Elliptical",20],["Stair Climber",15],["Ski Erg",10],["Jump Rope",10],["Swimming",30],["HIIT Circuit",20],["Battle Ropes",10],["Sled Push",10],["Dynamic Warm-Up",10],["Stretching",10],["Foam Rolling",10],["Yoga",30],["Hip Mobility",10],["Shoulder Mobility",10],["Cool-Down Stretch",5]]
+};
+const ABBR={"Chest":"CHEST","Back":"BACK","Shoulders":"DELTS","Biceps":"BIS","Triceps":"TRIS","Quads":"QUADS","Hamstrings & Glutes":"HAM/GLU","Calves":"CALVES","Core":"CORE","Cardio & Mobility":"CARDIO"};
+const TIMEG="Cardio & Mobility";
+const KEY="ironweek-custom-v1";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let S=load()||{unit:"lb",day:(new Date().getDay()+6)%7,days:DAYS.map(()=>({name:"",ex:[]}))};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1800)}
+const groupsOf=d=>[...new Set(d.ex.map(e=>e.group))];
+
+function renderDays(){
+  $("days").innerHTML=S.days.map((d,i)=>{
+    const g=groupsOf(d),show=g.slice(0,3).map(x=>`<i title="${esc(x)}">${esc(ABBR[x]||x)}</i>`).join("");
+    const more=g.length>3?`<i title="${esc(g.slice(3).join(", "))}">+${g.length-3}</i>`:"";
+    return `<button class="day" data-i="${i}" aria-current="${i===S.day}" aria-label="${DAYS[i]}${g.length?": "+esc(g.join(", ")):": no exercises"}"><b>${DAYS[i].slice(0,3)}</b><span class="chips">${g.length?show+more:'<i class="none">—</i>'}</span></button>`}).join("");
+}
+function stats(){
+  const d=S.days[S.day];let n=0,t=0,v=0,m=0;
+  d.ex.forEach(e=>{if(e.kind==="time"){t++;if(e.done){n++;m+=(+e.min||0)}return}e.sets.forEach(s=>{t++;if(s.done){n++;v+=(+s.w||0)*(+s.r||0)}})});
+  $("s-sets").textContent=`${n}/${t}`;$("s-vol").textContent=`${v.toLocaleString()} ${S.unit}`;$("s-min").textContent=`${m} min`;
+}
+function moveBtns(ei,d){return `<button class="btn ghost" data-up="${ei}" ${ei?"":"disabled"} aria-label="Move up">↑</button><button class="btn ghost" data-down="${ei}" ${ei<d.ex.length-1?"":"disabled"} aria-label="Move down">↓</button>`}
+function timeCard(e,ei,d){return `
+   <article class="ex">
+    <div class="exhead"><h3>${esc(e.name)}<span class="grp">${esc(e.group)}</span></h3><span class="target">${esc(e.target)} min</span></div>
+    ${e.last?`<div class="last">Last time: ${esc(e.last)} min</div>`:""}
+    <table><thead><tr><th>Minutes</th><th></th></tr></thead><tbody><tr class="${e.done?"done":""}">
+      <td><input type="number" inputmode="numeric" min="0" id="m-${S.day}-${ei}" data-t="${ei}" value="${esc(e.min)}" aria-label="Minutes"></td>
+      <td style="width:46px"><button class="chk" data-tdone="${ei}" aria-label="Mark done">✓</button></td></tr></tbody></table>
+    <div class="row-actions">${moveBtns(ei,d)}<button class="btn ghost" data-rmex="${ei}">Remove</button></div>
+   </article>`}
+function render(){
+  renderDays();
+  const d=S.days[S.day],g=groupsOf(d);
+  $("weekday").textContent=DAYS[S.day];
+  $("dayname").value=d.name||"";
+  $("sub").textContent=g.length?g.join(" · "):"No muscle groups yet";
+  if(!d.ex.length){$("list").innerHTML=`<div class="empty"><h3>Nothing planned</h3><p>Pick a muscle group and exercise below to build ${DAYS[S.day]}, or leave it as a rest day.</p></div>`;stats();return}
+  $("list").innerHTML=d.ex.map((e,ei)=>e.kind==="time"?timeCard(e,ei,d):`
+   <article class="ex">
+    <div class="exhead"><h3>${esc(e.name)}<span class="grp">${esc(e.group)}</span></h3><span class="target">${e.sets.length} × ${esc(e.target)}</span></div>
+    ${e.last?`<div class="last">Last time: ${esc(e.last)} ${S.unit}</div>`:""}
+    <table><thead><tr><th>Set</th><th>Weight (${S.unit})</th><th>Reps</th><th></th></tr></thead><tbody>
+    ${e.sets.map((s,si)=>`<tr class="${s.done?"done":""}">
+      <td class="n">${si+1}</td>
+      <td><input type="number" inputmode="decimal" step="2.5" min="0" id="w-${S.day}-${ei}-${si}" data-e="${ei}" data-s="${si}" data-k="w" value="${esc(s.w)}" aria-label="Set ${si+1} weight"></td>
+      <td><input type="number" inputmode="numeric" min="0" id="r-${S.day}-${ei}-${si}" data-e="${ei}" data-s="${si}" data-k="r" value="${esc(s.r)}" aria-label="Set ${si+1} reps"></td>
+      <td><button class="chk" data-done="${ei}-${si}" aria-label="Mark set ${si+1} done">✓</button></td></tr>`).join("")}
+    </tbody></table>
+    <div class="row-actions">
+      <button class="btn" data-addset="${ei}">+ Set</button>
+      <button class="btn ghost" data-rmset="${ei}">− Set</button>
+      <button class="btn ghost" data-up="${ei}" ${ei?"":"disabled"} aria-label="Move up">↑</button>
+      <button class="btn ghost" data-down="${ei}" ${ei<d.ex.length-1?"":"disabled"} aria-label="Move down">↓</button>
+      <button class="btn ghost" data-rmex="${ei}">Remove</button>
+    </div>
+   </article>`).join("")+`<div class="row-actions"><button class="btn primary" id="finish">Finish workout</button></div>`;
+  stats();
+}
+
+$("days").addEventListener("click",e=>{const b=e.target.closest(".day");if(!b)return;S.day=+b.dataset.i;save();render();window.scrollTo({top:0})});
+$("dayname").addEventListener("input",e=>{S.days[S.day].name=e.target.value;save()});
+$("list").addEventListener("input",e=>{const t=e.target;if(t.dataset.t){S.days[S.day].ex[t.dataset.t].min=t.value;save();stats();return}if(!t.dataset.k)return;S.days[S.day].ex[t.dataset.e].sets[t.dataset.s][t.dataset.k]=t.value;save();stats()});
+$("list").addEventListener("click",e=>{
+  const d=S.days[S.day],t=e.target.closest("button");if(!t||t.disabled)return;
+  if(t.dataset.tdone){const x=d.ex[t.dataset.tdone];x.done=!x.done;t.closest("tr").classList.toggle("done",x.done);save();stats();return}
+  if(t.dataset.done){const[a,b]=t.dataset.done.split("-");const s=d.ex[a].sets[b];s.done=!s.done;t.closest("tr").classList.toggle("done",s.done);save();stats();return}
+  if(t.dataset.addset){const ex=d.ex[t.dataset.addset];const l=ex.sets[ex.sets.length-1]||{w:"",r:""};ex.sets.push({w:l.w,r:l.r,done:false})}
+  else if(t.dataset.rmset){const ex=d.ex[t.dataset.rmset];if(ex.sets.length>1)ex.sets.pop()}
+  else if(t.dataset.up){const i=+t.dataset.up;[d.ex[i-1],d.ex[i]]=[d.ex[i],d.ex[i-1]]}
+  else if(t.dataset.down){const i=+t.dataset.down;[d.ex[i+1],d.ex[i]]=[d.ex[i],d.ex[i+1]]}
+  else if(t.dataset.rmex){const n=d.ex[+t.dataset.rmex].name;d.ex.splice(+t.dataset.rmex,1);toast(`Removed ${n}`)}
+  else if(t.id==="finish"){
+    let n=0;d.ex.forEach(ex=>{if(ex.kind==="time"){if(ex.done){ex.last=ex.min||0;n++}ex.done=false;return}const done=ex.sets.filter(s=>s.done);if(done.length){const top=done.reduce((a,b)=>(+b.w>+a.w?b:a));ex.last=`${top.w||0} × ${top.r||0}`;n+=done.length}ex.sets.forEach(s=>s.done=false)});
+    save();render();toast(n?`Workout saved. Ready for next week.`:"Mark at least one set done first.");return}
+  else return;
+  save();render();
+});
+
+function fillPick(){const g=$("add-group").value;
+  $("add-pick").innerHTML=LIB[g].map((x,i)=>`<option value="${i}">${esc(x[0])}</option>`).join("")+`<option value="custom">Custom exercise…</option>`;applyPick()}
+function applyPick(){const g=$("add-group").value,v=$("add-pick").value,c=v==="custom",tm=g===TIMEG;
+  $("add-name").hidden=!c;$("add-name").required=c;$("f-sets").hidden=tm;$("f-reps").hidden=tm;$("f-min").hidden=!tm;
+  if(c){$("add-name").focus();return}const x=LIB[g][+v];if(tm)$("add-min").value=x[1];else{$("add-sets").value=x[1];$("add-reps").value=x[2]}}
+$("add-group").innerHTML=Object.keys(LIB).map(g=>`<option>${esc(g)}</option>`).join("");
+$("add-group").onchange=fillPick;$("add-pick").onchange=applyPick;fillPick();
+$("addform").addEventListener("submit",e=>{e.preventDefault();
+  const g=$("add-group").value,v=$("add-pick").value;
+  const n=v==="custom"?$("add-name").value.trim():LIB[g][+v][0];if(!n)return;
+  if(g===TIMEG){const m=String(Math.max(1,+$("add-min").value||20));S.days[S.day].ex.push({name:n,group:g,kind:"time",target:m,min:m,done:false,last:""});$("add-name").value="";save();render();toast(`Added ${n} to ${DAYS[S.day]}`);return}
+  const s=Math.max(1,Math.min(10,+$("add-sets").value||3)),r=$("add-reps").value.trim()||"10";
+  S.days[S.day].ex.push({name:n,group:g,target:r,last:"",sets:Array.from({length:s},()=>({w:"",r:r.match(/^\d+/)?.[0]||"",done:false}))});
+  $("add-name").value="";save();render();toast(`Added ${n} to ${DAYS[S.day]}`)});
+
+function setUnit(u){S.unit=u;$("u-lb").setAttribute("aria-pressed",u==="lb");$("u-kg").setAttribute("aria-pressed",u==="kg");save();render()}
+$("u-lb").onclick=()=>setUnit("lb");$("u-kg").onclick=()=>setUnit("kg");
+setUnit(S.unit);
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+</body>
+</html>
